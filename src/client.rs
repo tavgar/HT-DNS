@@ -58,7 +58,7 @@ impl HTDNSClient {
     pub fn new(cfg: ClientConfig) -> Result<Self> { Ok(Self { cfg }) }
 
     async fn http_proxy_loop(tx: mpsc::Sender<ProxyCmd>) -> Result<()> {
-        let lst = TcpListener::bind(\"127.0.0.1:8080\").await?;
+        let lst = TcpListener::bind("127.0.0.1:8080").await?;
         loop {
             let (mut sock, _) = lst.accept().await?;
             let tx2 = tx.clone();
@@ -74,9 +74,9 @@ impl HTDNSClient {
         if n == 0 { return Ok(()); }
         if let Some(line) = std::str::from_utf8(&buf[..n]).ok().and_then(|s| s.lines().next()) {
             let p: Vec<_> = line.split_whitespace().collect();
-            if p.len() >= 2 && p[0] == \"GET\" {
+            if p.len() >= 2 && p[0] == "GET" {
                 tx.send(ProxyCmd::Request(Bytes::copy_from_slice(p[1].as_bytes()))).await.ok();
-                s.write_all(b\"HTTP/1.1 200 OK\\r\\nContent-Length: 0\\r\\n\\r\\n\").await?;
+                s.write_all(b"HTTP/1.1 200 OK\\r\\nContent-Length: 0\\r\\n\\r\\n").await?;
             }
         }
         Ok(())
@@ -108,7 +108,7 @@ impl Client for HTDNSClient {
             let (p_tx, mut p_rx) = mpsc::channel::<ProxyCmd>(1024);
             tokio::spawn(Self::http_proxy_loop(p_tx.clone()));
 
-            let ctx  = CryptoContext::new(&self.cfg.psk, b\"ht-dns\");
+            let ctx  = CryptoContext::new(&self.cfg.psk, b"ht-dns");
             let fec  = FecEngine::new()?;
             let mut reasm  = Reassembler::new();
             let mut shards = vec![None; N];

@@ -47,7 +47,7 @@ struct SessionState {
 impl SessionState {
     fn new(psk: &[u8; 32]) -> Result<Self> {
         Ok(Self {
-            crypto: CryptoContext::new(psk, b\"ht-dns\"),
+            crypto: CryptoContext::new(psk, b"ht-dns"),
             reasm:  Reassembler::new(),
             fec:    FecEngine::new()?,
             shards: vec![None; N],
