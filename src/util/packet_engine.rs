@@ -9,7 +9,6 @@ use std::{
     io,
     net::SocketAddr,
     os::unix::io::{AsRawFd, RawFd},
-    time::Duration,
 };
 use tokio::sync::mpsc::Sender;
 
@@ -40,9 +39,9 @@ impl PacketEngine {
         let ty     = if raw { Type::RAW } else { Type::DGRAM };
         let sock   = Socket::new(domain, ty.nonblocking(), Some(Protocol::UDP))?;
         sock.bind(&bind.into())?;
-        if busy_poll { set_busy_poll(sock.as_raw_fd(), 20_000) } // 20 µs
+        let _ = busy_poll;           // busy-poll disabled for now
         let fd   = sock.as_raw_fd();
-        let std  = sock.into_udp_socket();
+        let std: std::net::UdpSocket = sock.into();
         let mut mio_sock = mio::net::UdpSocket::from_std(std);
         let poll = Poll::new()?;
         poll.registry()
@@ -98,18 +97,8 @@ impl PacketEngine {
 }
 
 /* ---------- linux helpers ---------- */
-#[cfg(target_os = "linux")]
-fn set_busy_poll(fd: RawFd, usec: u32) {
-    unsafe {
-        libc::setsockopt(
-            fd,
-            libc::SOL_SOCKET,
-            SO_BUSY_POLL,
-            &usec as *const _ as *const _,
-            std::mem::size_of::<u32>() as _,
-        );
-    }
-}
+
+let _ = busy_poll; // busy-poll temporarily disabled
 
 /* ---------- FFI for sendmmsg / recvmmsg ---------- */
 #[repr(C)] struct Iovec   { base: *mut u8, len: usize }

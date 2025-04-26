@@ -95,9 +95,10 @@ impl Client for HTDNSClient {
         for _ in 0..self.cfg.workers.max(1) {
             let tx_clone = eng_tx.clone();
             let mut pe   = PacketEngine::new(self.cfg.local, tx_clone, self.cfg.raw, self.cfg.busy_poll)?;
-            let mut rx   = cli_rx.clone();
             std::thread::spawn(move || {
-                while let Ok((b, a)) = rx.blocking_recv() { pe.queue(b, a); }
+                while let Some((pkt, addr)) = cli_rx.blocking_recv() {
+                    pe.queue(pkt, addr);
+                }
                 let _ = pe.run();
             });
         }
@@ -148,8 +149,7 @@ impl Client for HTDNSClient {
                                 let mut buf_o = vec![0u8; 6 + cipher.len()];
                                 let m = outer.encode(&mut buf_o)?;
                                 let bytes = Bytes::copy_from_slice(&buf_o[..m]);
-                                cli_tx.send((bytes.clone(), self.cfg.server)).await?;
-                                inflight.insert(seq, (Instant::now(), bytes, Duration::from_millis(RETRAN_MS)));
+                                cli_tx.send((bytes.clone(), cfg.server)).await.unwrap_or(());                                inflight.insert(seq, (Instant::now(), bytes, Duration::from_millis(RETRAN_MS)));
                                 seq = seq.wrapping_add(1);
                             }
                         }
@@ -160,8 +160,7 @@ impl Client for HTDNSClient {
                             if now.duration_since(*ts) >= *to {
                                 *ts = now;
                                 *to *= 2;
-                                cli_tx.send((data.clone(), self.cfg.server)).await?;
-                            }
+                                cli_tx.send((bytes.clone(), cfg.server)).await.unwrap_or(());                            }
                         }
                     }
                 }

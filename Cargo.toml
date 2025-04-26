@@ -4,10 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bytes                = "1.5"          # latest stable
-chacha20poly1305     = { version = "0.10.1", features = ["stream"] }  # <-- stable, contains XChaCha20Poly1305
-mio                  = "0.8.11"
+bytes                = "1.5"
+chacha20poly1305     = { version = "0.10.1", features = ["stream"] }
+
+# mio needs its gated modules; socket2 does not
+mio                  = { version = "0.8.11", features = ["net", "os-poll"] }
+socket2              = "0.5.9"
+
 reed-solomon-erasure = "6.0.0"
-socket2              = "0.5.8"
 thiserror            = "1.0.61"
 tokio                = { version = "1.37.0", features = ["full"] }

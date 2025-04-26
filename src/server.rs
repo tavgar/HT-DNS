@@ -86,7 +86,9 @@ impl Server for HTDNSServer {
                 let outer = Frame::decode(&pkt)?;
                 let plain = sess.crypto.open(outer.payload)?;
                 let inner = Frame::decode(&plain)?;
+                let seq   = inner.seq;                  // save before move
                 let ready = sess.reasm.push(inner);
+                let idx   = (seq as usize) % N;
                 for chunk in ready {
                     let idx = (inner.seq as usize) % N;
                     sess.shards[idx] = Some(chunk);
